@@ -1,7 +1,33 @@
 {% extends "base.html" %}
 {% block content %}
 {{ super() }}
-<p> Просмотр картотеки: <br>
-    разрешено всем,<br>
-    фильтрация по (см.описание) <br>
+<h3 class="title3"> Просмотр картотеки</h3><br>
+
+
+<form method="POST" action="/perechen">
+  <label for="f_name">Название</label>
+  <input type="text" id="f_name" name="f_name">
+  <input type="submit" value="фильтровать">
+</form>
+
+{% for m in prch_th  %}
+  <div class="wrapper2">
+    <div>
+      {{ m.id }}. {{ m.film_name }} <br>
+      <img class="user-poster" src="{{ m.poster }}" 
+         alt="Здесь нет изображения!!!" width="200" height="150" />
+       <br>
+      жанр: {{ m.janre_id }} <br>
+      режиссер: {{ m.rejiser}} <br>
+      пользователь {{ m.user }} <br>
+    </div>
+    <div class="dscr-unit">
+      {{ m.descript}}
+
+    </div>
+    
+  </div>  
+  --------------------------------------------------------------------------------------------- <br>
+  {% endfor %}
+
 {% endblock %}
