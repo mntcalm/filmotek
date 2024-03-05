@@ -9,8 +9,10 @@
     <tr>
       <td><label for="f_name">Название</label></td>
       <td><label for="janr">Жанр</label></td>
-      <td><input type="submit" value="Поиск"></td>
-
+      <td><label for="god_ot">год (от)</label>
+      <td><label for="god_do">год (до)</label>
+      <td>&nbsp;</td>
+        
     </tr>
     <tr>
       <td><input type="text" id="f_name" name="f_name"></td>
@@ -19,14 +21,46 @@
          <option value="{{ m.id }}">{{ m.j_name }}</option>
          {% endfor %}
           </select></td>
+      <td><input type="text" id="god_ot" name="god_ot" pattern="\d{4}" size="4" maxlength="4"></td>
+      <td><input type="text" id="god_do" name="god_do" pattern="\d{4}" size="4" maxlength="4"></td>
+      <td><button type="submit" onclick="validate()">Поиск</td>
       
-      <td>&nbsp;</td>
     </tr>
+  </table>
+  ---------------------------------------------------------------------------------------------
+    <script>
+      function validate() {
+        var year_from = document.getElementById("god_ot").value;
+        var year_to = document.getElementById("god_do").value;
+        var current_year = new Date().getFullYear();
+        // Если оба поля пустые - то допустимо
+        if ( year_from === "" && year_to === "") {
+          return true;
+        }
+
+
+        // Проверить, что годы не меньше 1870 и не больше текущего года
+        
+        if (year_from < 1870 || year_from > current_year || year_to < 1870 || year_to > current_year) {
+           alert("Год должен быть в диапазоне от 1870 до " + current_year);
+          return false;
+        }
+        // Проверить, что начало диапазона не больше конца
+        if (year_from > year_to) {
+        alert("Начало диапазона не может быть больше конца");
+        return false;
+        }
+        // Если все проверки пройдены, отправить форму
+        return true;
+      }
+    </script>
+
+
+      
 
 
 
-
-  </table>  
+    
 </form>
 
 {% for m in prch_th  %}
