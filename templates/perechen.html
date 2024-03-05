@@ -5,9 +5,28 @@
 
 
 <form method="POST" action="/perechen">
-  <label for="f_name">Название</label>
-  <input type="text" id="f_name" name="f_name">
-  <input type="submit" value="фильтровать">
+  <table>
+    <tr>
+      <td><label for="f_name">Название</label></td>
+      <td><label for="janr">Жанр</label></td>
+      <td><input type="submit" value="Поиск"></td>
+
+    </tr>
+    <tr>
+      <td><input type="text" id="f_name" name="f_name"></td>
+      <td><select name="janr" id="janr">
+         {% for m in janre_list %}
+         <option value="{{ m.id }}">{{ m.j_name }}</option>
+         {% endfor %}
+          </select></td>
+      
+      <td>&nbsp;</td>
+    </tr>
+
+
+
+
+  </table>  
 </form>
 
 {% for m in prch_th  %}
