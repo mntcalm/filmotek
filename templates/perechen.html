@@ -11,6 +11,8 @@
       <td><label for="janr">Жанр</label></td>
       <td><label for="god_ot">год (от)</label>
       <td><label for="god_do">год (до)</label>
+      <td><label for="sortr">сортировать по:</label></td>
+      <td><label for="pagin">фильмов на стр.</label></td>
       <td>&nbsp;</td>
         
     </tr>
@@ -23,6 +25,17 @@
           </select></td>
       <td><input type="text" id="god_ot" name="god_ot" pattern="\d{4}" size="4" maxlength="4"></td>
       <td><input type="text" id="god_do" name="god_do" pattern="\d{4}" size="4" maxlength="4"></td>
+      <td><select name="sortr" id="sortr">
+        <option value="nosort">не сортировать</option>
+        <option value="datev">дате выхода</option>
+        <option value="ratng">рейтингу</option>
+        </select>
+      </td>
+      <td><select name="pagin" id_="pagin">
+        <option value="10">10 на страницу</option>
+        <option value="25">25 на страницу</option>
+        </select>
+      </td>
       <td><button type="submit" onclick="validate()">Поиск</td>
       
     </tr>
@@ -62,17 +75,47 @@
 
     
 </form>
+{% if page > 1 %}
+   <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page=1">В начало</a>
+  {% else %}
+  В начало
+  {% endif %}
+   |
+  {% if page > 1 %}
+    <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page={{ page - 1 }}">{{ page - 1 }}<--Назад </a>
+  {% else %}
+   X<--Назад
+  {% endif %}
+   |
+  Страница {{ page }}
+    |
+  {% if page < n_pages  %}
+    <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page={{ page + 1 }}">Вперед-->{{ page + 1 }}</a>
+  {% else %}
+  Вперед-->X
+  {% endif %}
+    |
+  {% if page < n_pages %}
+    <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page={{ n_pages }}"> На последнюю</a>
+  {% else %}
+  На последнюю 
+  {% endif %}  
+  |||  найдено: {{ n_entr }} на {{ n_pages }} страницах <br>
+  
+   ===========================================================================
 
 {% for m in prch_th  %}
   <div class="wrapper2">
     <div>
-      {{ m.id }}. {{ m.film_name }} <br>
+      {{ m.id }}. <span class="dskr-item">{{ m.film_name }}</span> <br>
       <img class="user-poster" src="{{ m.poster }}" 
          alt="Здесь нет изображения!!!" width="200" height="150" />
        <br>
-      жанр: {{ m.janre_id }} <br>
-      режиссер: {{ m.rejiser}} <br>
-      пользователь {{ m.user }} <br>
+      жанр: <span class="dskr-item">{{ m.janre_id }} </span><br>
+      режиссер: <span class="dskr-item">{{ m.rejiser}}</span> <br>
+      пользователь <span class="dskr-item">{{ m.user }} </span><br>
+      дата выхода: <span class="dskr-item">{{ m.release_date }}</span> <br>
+      рейтинг: <span class="dskr-item">{{ m.rate }}</span> <br>
     </div>
     <div class="dscr-unit">
       {{ m.descript}}
@@ -82,5 +125,32 @@
   </div>  
   --------------------------------------------------------------------------------------------- <br>
   {% endfor %}
+  
+  {% if page > 1 %}
+   <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page=1">В начало</a>
+  {% else %}
+  В начало
+  {% endif %}
+   |
+  {% if page > 1 %}
+    <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page={{ page - 1 }}">{{ page - 1 }}<--Назад </a>
+  {% else %}
+   X<--Назад
+  {% endif %}
+   |
+  Страница {{ page }}
+    |
+  {% if page < n_pages  %}
+    <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page={{ page + 1 }}">Вперед-->{{ page + 1 }}</a>
+  {% else %}
+  Вперед-->X
+  {% endif %}
+    |
+  {% if page < n_pages %}
+    <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page={{ n_pages }}"> На последнюю</a>
+  {% else %}
+  На последнюю 
+  {% endif %}  
+  |||  найдено: {{ n_entr }} на {{ n_pages }} страницах
 
 {% endblock %}
