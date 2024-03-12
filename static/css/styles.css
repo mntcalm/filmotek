@@ -113,3 +113,14 @@ body {
     color: #149b14;
     margin-left: 0;
 }
+
+.dskr2-item {
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: 700;
+    font-size: 22px;
+    color: #031a03;
+    margin-left: 0;
+}

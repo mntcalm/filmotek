@@ -14,3 +14,10 @@ create database filmer;
 create user film_user;
 alter database filmer owner to film_user;
 ALTER USER film_user WITH ENCRYPTED PASSWORD 'fiLm1234';
+
+
+пароли шифрованы:
+1,user1,pass1woRd,1,0
+2,user2,pass2word,2,0
+3,user3,pass3word,2,1
+4,user4,pass4woRd,2,0

@@ -9,8 +9,8 @@
     <tr>
       <td><label for="f_name">Название</label></td>
       <td><label for="janr">Жанр</label></td>
-      <td><label for="god_ot">год (от)</label>
-      <td><label for="god_do">год (до)</label>
+      <td><label for="god_ot">год (от)</label></td>
+      <td><label for="god_do">год (до)</label></td>
       <td><label for="sortr">сортировать по:</label></td>
       <td><label for="pagin">фильмов на стр.</label></td>
       <td>&nbsp;</td>
@@ -67,14 +67,9 @@
         return true;
       }
     </script>
-
-
-      
-
-
-
     
 </form>
+<div class="dskr-item">
 {% if page > 1 %}
    <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page=1">В начало</a>
   {% else %}
@@ -100,8 +95,8 @@
   {% else %}
   На последнюю 
   {% endif %}  
-  |||  найдено: {{ n_entr }} на {{ n_pages }} страницах <br>
-  
+  <span class="dskr2-item">|||  найдено: {{ n_entr }} на {{ n_pages }} страницах </span><br>
+  </div>
    ===========================================================================
 
 {% for m in prch_th  %}
@@ -125,7 +120,7 @@
   </div>  
   --------------------------------------------------------------------------------------------- <br>
   {% endfor %}
-  
+  <div class="dskr-item">
   {% if page > 1 %}
    <a href="/perechen?ff_n={{ f_filtr_name }}&jj_id={{ j_filtr_id }}&gg_ot={{ god_ot }}&gg_do={{ god_do }}&ww_sort={{ sortirovka }}&nn_pagin={{ paginacia }}&pp_page=1">В начало</a>
   {% else %}
@@ -151,6 +146,6 @@
   {% else %}
   На последнюю 
   {% endif %}  
-  |||  найдено: {{ n_entr }} на {{ n_pages }} страницах
-
+  <span class="dskr2-item">|||  найдено: {{ n_entr }} на {{ n_pages }} страницах</span>
+</div>
 {% endblock %}
