@@ -1,7 +1,7 @@
 CREATE TABLE films (id SERIAL PRIMARY KEY, film_name VARCHAR(255), janre_id INT, release_date DATE, rejiser_id int, descript TEXT, rate FLOAT, poster VARCHAR(255), user_id INT);
 CREATE TABLE janre (id SERIAL PRIMARY KEY, janr VARCHAR(255));
 CREATE TABLE rejis (id SERIAL PRIMARY KEY, rejiser VARCHAR(255));
-CREATE TABLE users (id SERIAL PRIMARY KEY, user_name VARCHAR(255), passwd VARCHAR(255), role_id INT, locked BOOLEAN);
+CREATE TABLE users (id SERIAL PRIMARY KEY, user_name VARCHAR(255) UNIQUE, passwd VARCHAR(255), role_id INT, locked BOOLEAN);
 CREATE TABLE user_type (Id SERIAL PRIMARY KEY, u_type VARCHAR(255));
 
 ALTER TABLE films ADD CONSTRAINT ordering FOREIGN KEY (janre_id) REFERENCES janre (Id);

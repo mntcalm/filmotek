@@ -8,7 +8,7 @@ from io import BytesIO
 import psycopg2 as ps
 from flask import Flask, render_template, redirect, url_for, send_file, request
 from math import ceil
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import hashlib
 import secrets
 #from UserLogin import UserLogin
@@ -31,7 +31,7 @@ def parse_config():
         program_dir = os.path.dirname(os.path.abspath(__file__))
         config_path = os.path.join(program_dir, "filmotek.conf")
         config.read(config_path)
-#    # Получаем значениz параметрjd font из секции db
+#    # Получаем значения параметров font из секции db
         db_driver = config.get("db", "driver")
         db_name = config.get("db", "name")
         db_host = config.get("db", "host")
@@ -43,6 +43,12 @@ def parse_config():
         return "Failed to read DB config"
 
 class UserLogin():
+    def __init__(self, id, name, role_id, locked):
+        self.id = id
+        self.name = name
+        self.role_id = role_id
+        self.locked = locked
+    
     def is_authenticated(self):
         return True
     def is_active(self):
@@ -50,15 +56,22 @@ class UserLogin():
     def is_anonymous(self):
         return False
     def get_id(self):
-        return str(self.__user['id'])
+        return str(self.id)
+
+
 
 db_details = parse_config()
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = '9OLWxhH345j4K4iuopO'
 
-#login_manager = LoginManager(app)
 
-if str(db_details.driver) == 'PostgreSQL':
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
+
+if str(db_details.driver) == 'postgresql':
     connection = ps.connect(
          host=str(db_details.host),
          user=str(db_details.login),
@@ -72,7 +85,7 @@ if str(db_details.driver) == 'PostgreSQL':
 @app.route("/")
 def index():
     mssg = str(request.args.get("f_msg", "Привет-привет!"))
-    return render_template('index.html', mssg=mssg)
+    return render_template('index.html', mssg=mssg, c_u=current_user)
 
 
 @app.route("/perechen", methods=["GET", 'POST'])
@@ -197,12 +210,16 @@ def perechen():
     
     cursor.close()
 
+#    if current_user:
+#        cur_user = str(current_user.id)
+#        cur_role = str(current_user.role_id)
+
     return render_template('perechen.html', prch_th=prch_th,
       janre_list=janre_list, page=page, paginacia=paginacia,
       f_filtr_name=f_filtr_name,
       j_filtr_id=j_filtr_id, god_ot=god_ot, god_do=god_do,
       sortirovka=sortirovka, offset=offset,
-      n_pages=n_pages, n_entr=n_entr )
+      n_pages=n_pages, n_entr=n_entr, c_u=current_user)
   elif request.method == "POST":
     f_n = request.form["f_name"]
     j_id = request.form["janr"]
@@ -216,19 +233,20 @@ def perechen():
 @app.route("/adding")
 def adding():
 
-    return render_template('adding.html')
+    return render_template('adding.html', c_u=current_user)
 
 
 @app.route("/editing")
+@login_required
 def editing():
 
-    return render_template('editing.html')
+    return render_template('editing.html', c_u=current_user)
 
 
 @app.route("/login", methods=["GET", 'POST'])
 def login():
     if request.method == "GET":
-       return render_template('login.html')
+       return render_template('login.html', c_u=current_user)
     elif request.method == "POST":
       f_login = request.form["login"]
       f_passwd = request.form["password"]
@@ -237,7 +255,7 @@ def login():
 
 # формируем запрос о таком пользователе       
       request_to_read_user='''SELECT u.id, u.user_name, 
-      u.passwd, u.role_id, t.u_type FROM \
+      u.passwd, u.role_id, t.u_type, u.locked FROM \
       users u INNER JOIN user_type t ON u.role_id = t.id WHERE user_name = \'''' \
       + str(f_login) + '\';'
       
@@ -249,17 +267,23 @@ def login():
 
       u_d = []
       for row in user_details:
+          d_id = row[0]
           d_login = row[1]
           d_passwd = row[2]
-          d_role = row[4]
+          d_role = row[3]
+          d_locked = row[5]
           u_d.append("+")
         
 
-      print(hash_passwd)
-      print(d_passwd)  
+        
       if  len(u_d) == 1: # пользователь существует
           if str(d_passwd) == str(hash_passwd): # пароль правильный
               msg = "Вы успешно авторизованы как " + str(d_login)
+              userlogin = UserLogin(d_id, d_login, d_role, d_locked)
+              login_user(userlogin)
+              
+
+
           else:
               msg = "Неправильный пароль"     
       else:
@@ -268,17 +292,48 @@ def login():
       
       return redirect(url_for('index', f_msg=msg))
 
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 @app.route("/user_edit")
 def user_edit():
 
-    return render_template('user_edit.html')
+    return render_template('user_edit.html', c_u=current_user)
 
 
 @app.route("/help")
 def help_it():
 
-    return render_template('help.html')
+    return render_template('help.html', c_u=current_user)
 
+
+@login_manager.user_loader
+def load_user(userid):
+    request_to_read_user='''SELECT u.id, u.user_name, 
+      u.passwd, u.role_id, t.u_type, u.locked FROM \
+      users u INNER JOIN user_type t ON u.role_id = t.id WHERE u.id = \'''' \
+      + str(userid) + '\';'
+    cursor = connection.cursor()
+    cursor.execute(request_to_read_user)
+    user_details = cursor.fetchall()
+    cursor.close()
+    
+    u_d = []
+    for row in user_details:
+        d_id = row[0]
+        d_login = row[1]
+        d_passwd = row[2]
+        d_role = row[3]
+        d_locked = row[5]
+        u_d.append("+")
+        
+
+        
+    if  len(u_d) == 1: # пользователь существует
+        loaded_user = UserLogin(d_id, d_login, d_role, d_locked)
+            
+    return loaded_user
 
 app.run(host='127.0.0.1', port=8080, debug=True)

@@ -111,6 +111,18 @@
       пользователь <span class="dskr-item">{{ m.user }} </span><br>
       дата выхода: <span class="dskr-item">{{ m.release_date }}</span> <br>
       рейтинг: <span class="dskr-item">{{ m.rate }}</span> <br>
+      {% if c_u is defined and c_u.name %}
+         {% if m.user == c_u.name or c_u.role_id == 1 %}
+         <a href="/editing?film_id={{ m.id }}">Редактировать</a>
+         {% endif %}
+      {% endif %}
+      
+      
+      {% if cur_role == 1 %}
+        Редактировать (адм) <br>
+      {% elif cur_user == m.id %}
+         Редактировать (плз) <br>
+      {% endif %}
     </div>
     <div class="dscr-unit">
       {{ m.descript}}

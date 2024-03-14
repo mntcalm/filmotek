@@ -23,7 +23,13 @@
     <aside class="sidebar">
       <span class="dskr-item"> Привет, любители искусства!</span> <br>
       <img src="static/img/otter_optim.png" alt="Fotki Netu!!!" width="250"><br>
-      <span class="dskr-item">вы вошли как гость <a href="/login">Войти</a></span><br>
+      
+      {% if c_u is defined and c_u.name %}
+         <span class="dskr-item">вы вошли как {{ c_u.name }} <a href="/logout">Выйти</a></span><br>
+      {% else %}
+         <span class="dskr-item">Авторизуйтесь, гость <a href="/login">Войти</a></span><br>
+      {% endif %}
+      
       <div class="sidebar-content">
         <h3 class="title3">МЕНЮ</h3>  
          <ul>
