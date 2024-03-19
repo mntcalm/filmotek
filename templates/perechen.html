@@ -9,6 +9,7 @@
     <tr>
       <td><label for="f_name">Название</label></td>
       <td><label for="janr">Жанр</label></td>
+      <td><label for="rejis">Режиссер</label></td>
       <td><label for="god_ot">год (от)</label></td>
       <td><label for="god_do">год (до)</label></td>
       <td><label for="sortr">сортировать по:</label></td>
@@ -23,6 +24,12 @@
          <option value="{{ m.id }}">{{ m.j_name }}</option>
          {% endfor %}
           </select></td>
+      <td><select name="regis" id="regis">
+         {% for m in regis_list %}
+         <option value="{{ m.id }}">{{ m.r_name }}</option>
+         {% endfor %}
+         </select></td>
+      
       <td><input type="text" id="god_ot" name="god_ot" pattern="\d{4}" size="4" maxlength="4"></td>
       <td><input type="text" id="god_do" name="god_do" pattern="\d{4}" size="4" maxlength="4"></td>
       <td><select name="sortr" id="sortr">
@@ -36,7 +43,7 @@
         <option value="25">25 на страницу</option>
         </select>
       </td>
-      <td><button type="submit" onclick="validate()">Поиск</td>
+      <td><button type="submit" onclick="validate_add()">Поиск</td>
       
     </tr>
   </table>
@@ -64,8 +71,9 @@
         return false;
         }
         // Если все проверки пройдены, отправить форму
-        return true;
+        // return true;
       }
+
     </script>
     
 </form>

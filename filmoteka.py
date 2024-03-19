@@ -10,18 +10,19 @@ from flask import Flask, render_template, redirect, url_for, send_file, request
 from math import ceil
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import hashlib
-import secrets
+from werkzeug.utils import secure_filename
+import os
+import random
+import string
+from models import (Db_details,
+   UserLogin,
+   Prch,
+   Janry,
+   Regisery)
+#import models
 #from UserLogin import UserLogin
 
 
-class Db_details(object):
-    def __init__(self, driver, name, host, port, login, password):
-        self.driver = driver
-        self.name = name
-        self.host = host
-        self.port = port
-        self.login = login
-        self.password = password
 
 
 def parse_config():
@@ -42,29 +43,46 @@ def parse_config():
     except:
         return "Failed to read DB config"
 
-class UserLogin():
-    def __init__(self, id, name, role_id, locked):
-        self.id = id
-        self.name = name
-        self.role_id = role_id
-        self.locked = locked
-    
-    def is_authenticated(self):
-        return True
-    def is_active(self):
-        return True
-    def is_anonymous(self):
-        return False
-    def get_id(self):
-        return str(self.id)
+def generate_random_filename():
+    # Генерация случайной строки из 8 символов
+    random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    # Добавление расширения к имени файла
+    return random_string
 
 
+def get_janre_list(cursr):
+#   формирование таблицы жанров и их ID
+    j_l = [Janry('-8', '<empty>'),]        
+    request_to_read_data = '''SELECT id, janr from janre;'''
+    cursr.execute(request_to_read_data)
+    data = cursr.fetchall()
+    for row in data:
+        a = Janry(row[0], row[1])
+        j_l.append(a)
+    return j_l
+
+def get_regis_list(cursr):
+#   формирование таблицы Режиссеров и их ID   
+    r_l = [Regisery('-8', '<empty>'),]        
+    request_to_read_data = '''SELECT id, rejiser from rejis;'''
+    cursr.execute(request_to_read_data)
+    data = cursr.fetchall()
+    for row in data:
+        a = Regisery(row[0], row[1])
+        r_l.append(a)
+    return r_l
 
 db_details = parse_config()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '9OLWxhH345j4K4iuopO'
+app.config['UPLOAD_FOLDER'] = 'static/img/posters'
+app.config['MAX_CONTENT_LENGTH'] = 1.5 * 1024 * 1024  # 1.5 MB limit
+ALLOWED_EXTENSIONS = {'png', 'gif', 'bmp', 'jpg', 'jpeg'}
 
+def allowed_file(filename):
+    return '.' in filename and \
+    filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -79,7 +97,7 @@ if str(db_details.driver) == 'postgresql':
          database=str(db_details.name),
          port=int(db_details.port)
         )
-
+    
 
 
 @app.route("/")
@@ -93,56 +111,14 @@ def perechen():
   if request.method == "GET":
     f_filtr_name = str(request.args.get("ff_n", ""))
     j_filtr_id = str(request.args.get("jj_id", "-8"))
+    r_filtr_id = str(request.args.get("rr_id", "-8"))
     god_ot = str(request.args.get("gg_ot", ""))
     god_do = str(request.args.get("gg_do", ""))
     sortirovka = str(request.args.get("ww_sort", ""))
     paginacia = int(request.args.get("nn_pagin", 10))
     page = int(request.args.get("pp_page", 1))
     offset = (page - 1) * paginacia
- #   print("-------------", god_ot, god_do)
-    class Prch(object):
-        def __init__(
-            self,
-            id,
-            film_name,
-            janre_id,
-            release_date,
-            rejiser,
-            descript,
-            rate,
-            user,
-            poster):
-                self.id = id
-                self.film_name = film_name
-                self.janre_id = janre_id
-                self.release_date = release_date
-                self.rejiser = rejiser
-                self.descript = descript
-                self.rate = rate
-                self.user = user
-                self.poster = poster
-#    #cursor.close()
-#    #connection.close()
-#    print(f_filtr_name)
 
-
-#   формирование таблицы жанров и их ID   
-    class Janry(object):
-        def __init__(
-            self,
-            id,
-            j_name):
-                self.id = id
-                self.j_name = j_name
-    janre_list = [Janry('-8', '<empty>'),]        
-    request_to_read_data = '''SELECT id, janr from janre;'''
-    cursor = connection.cursor()
-    cursor.execute(request_to_read_data)
-    data = cursor.fetchall()
-    for row in data:
-        a = Janry(row[0], row[1])
-        janre_list.append(a)
-    
 
 # обработка данных формы: фильтруем по каким полям        
     if f_filtr_name == 'None' or len(f_filtr_name) <=2:
@@ -154,6 +130,12 @@ def perechen():
         db_j_filtr_id = ''
     else:
         db_j_filtr_id = " AND f.janre_id = '" + str(j_filtr_id) + "'"
+
+# фильтр по режиссерам - по образу жанрового
+    if r_filtr_id == 'None' or str(r_filtr_id) == '-8':
+        db_r_filtr_id = ''
+    else:
+        db_r_filtr_id = " AND f.rejiser_id = '" + str(r_filtr_id) + "'"
  
 
     if str(god_ot) == 'None' or len(str(god_ot)) <=2:
@@ -177,16 +159,24 @@ def perechen():
     films f INNER JOIN rejis r ON f.rejiser_id = r.Id INNER
     JOIN users u ON f.user_id=u.id INNER JOIN janre j on
     j.Id=f.janre_id WHERE TRUE''' + db_f_filtr_name + db_j_filtr_id \
-    + god_filtr + db_sortirovka + lim_step
-    
+    + god_filtr + db_r_filtr_id + db_sortirovka + lim_step
+
+        
 
 # Запрос пересчитывающий вхождения (и чтоб оценить кол-во страниц в пагинации)
     r_n = '''SELECT COUNT(*) FROM
     films f INNER JOIN rejis r ON f.rejiser_id = r.Id INNER
     JOIN users u ON f.user_id=u.id INNER JOIN janre j on 
     j.Id=f.janre_id WHERE TRUE''' + db_f_filtr_name \
-    + db_j_filtr_id + god_filtr + ';'
+    + db_j_filtr_id + god_filtr + db_r_filtr_id + ';'
     
+    
+    cursor = connection.cursor()
+
+#   формирование таблиц жанров и режиссеров   
+ 
+    janre_list = get_janre_list(cursor)
+    regis_list = get_regis_list(cursor)
 
 # запрашиваем, пересчитываем
     cursor.execute(r_n)
@@ -194,13 +184,12 @@ def perechen():
     n_pages = ceil(entryes[0][0] / paginacia)
     n_entr = entryes[0][0]
 
-
 # запрашиваем, запоминаем
     cursor.execute(request_to_read_data)
 
     data = cursor.fetchall()
 #    #print(len(data))
-
+    cursor.close()
 
 # упаковываем в массив структуры(объекты класса извлеченного из БД)
     prch_th = []
@@ -208,7 +197,7 @@ def perechen():
         a = Prch(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8])
         prch_th.append(a)
     
-    cursor.close()
+    
 
 #    if current_user:
 #        cur_user = str(current_user.id)
@@ -218,22 +207,89 @@ def perechen():
       janre_list=janre_list, page=page, paginacia=paginacia,
       f_filtr_name=f_filtr_name,
       j_filtr_id=j_filtr_id, god_ot=god_ot, god_do=god_do,
-      sortirovka=sortirovka, offset=offset,
+      sortirovka=sortirovka, offset=offset, regis_list=regis_list,
       n_pages=n_pages, n_entr=n_entr, c_u=current_user)
   elif request.method == "POST":
     f_n = request.form["f_name"]
+    r_id = request.form["regis"]
     j_id = request.form["janr"]
     g_ot = request.form["god_ot"]
     g_do = request.form["god_do"]
     w_sort = request.form["sortr"]
     n_pagin = request.form["pagin"]
-    return redirect(url_for('perechen', ff_n=f_n, jj_id=j_id, gg_ot=g_ot,
+    return redirect(url_for('perechen', ff_n=f_n, jj_id=j_id, rr_id=r_id, gg_ot=g_ot,
     gg_do=g_do, ww_sort=w_sort, nn_pagin=n_pagin, pp_page=1))
 
-@app.route("/adding")
-def adding():
 
-    return render_template('adding.html', c_u=current_user)
+@app.route("/addingsql", methods=["GET"])
+@login_required
+def addingsql():
+    f_name = str(request.args.get("f_n"))
+    f_desc = str(request.args.get("f_d"))
+    rel_dat = str(request.args.get("r_d"))
+    f_upl = str(request.args.get("f_u"))
+    f_jnr = str(request.args.get("f_j"))
+    f_rej = str(request.args.get("f_r"))
+    c_uid = str(current_user.id)
+
+    cursor = connection.cursor()
+    ins_req = '''INSERT INTO films (film_name, janre_id, rejiser_id,
+    release_date, descript, rate, user_id) VALUES (''' + "'" + f_name +\
+    "', " + f_jnr + ", " + f_rej + ", '" +  rel_dat + "', '" +\
+    f_desc + "', 5.5, " + c_uid + ") RETURNING id;"
+    connection.commit()
+    
+    cursor.execute(ins_req)
+    db_rep = cursor.fetchall()
+    post_id = db_rep[0][0]
+    print(post_id)
+    
+    
+    old_f = app.config['UPLOAD_FOLDER'] + '/' + f_upl
+    new_f = app.config['UPLOAD_FOLDER'] + '/perech' +\
+    str(post_id) + ".png"
+    upd_req = "UPDATE films SET poster = '" +\
+    new_f + "' WHERE id = '" + str(post_id) + "';"
+    print(upd_req)
+    cursor.execute(upd_req)
+    connection.commit()
+    cursor.close()
+    
+    os.rename(old_f, new_f)
+    return redirect(url_for('perechen', ff_n=f_name, page=1))
+
+@app.route("/adding", methods=["GET", "POST"])
+@login_required
+def adding():
+    if request.method == "GET":
+        cursor = connection.cursor()
+        janre_list = get_janre_list(cursor)
+        regis_list = get_regis_list(cursor)
+        cursor.close()
+        return render_template('adding.html',
+        janre_list=janre_list, regis_list=regis_list)
+       
+
+
+    elif request.method == "POST":
+        f_n = request.form["f_name"]
+        f_d = request.form["f_desc"]
+        r_d = request.form["rel_date"]
+#        u_file = request.form["fileToUpload"]
+        f_j = request.form["janr"]
+        f_r = request.form["regis"]
+        
+        file = request.files['fileToUpload']
+        u_file = file.filename
+        filename = secure_filename(file.filename)
+        new_filename = generate_random_filename() + '.' + \
+            filename.rsplit('.', 1)[1].lower()
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename)) 
+        
+        
+        return redirect(url_for('addingsql', f_n=f_n, f_d=f_d, r_d=r_d,
+        f_u=new_filename,
+        f_j=f_j, f_r=f_r))
 
 
 @app.route("/editing")
