@@ -280,7 +280,7 @@ def adding():
         f_r = request.form["regis"]
         
         file = request.files['fileToUpload']
-        u_file = file.filename
+#        u_file = file.filename
         filename = secure_filename(file.filename)
         new_filename = generate_random_filename() + '.' + \
             filename.rsplit('.', 1)[1].lower()
@@ -292,12 +292,78 @@ def adding():
         f_j=f_j, f_r=f_r))
 
 
-@app.route("/editing")
+@app.route("/editingsql", methods=["GET", "POST"])
+@login_required
+def editingsql():
+    
+    f_id = str(request.args.get("f_id"))
+    f_n = str(request.args.get("f_n"))
+    j_id= str(request.args.get("j_id"))
+    r_id = str(request.args.get("r_id"))
+    k_o = str(request.args.get("k_o"))
+    d_r = str(request.args.get("d_r"))
+    f_upl = str(request.args.get("f_u"))
+
+    print("применение изменений ", f_id)
+    u_req = 'UPDATE films SET film_name = \'' + f_n + '\', janre_id = ' +\
+    j_id + ', rejiser_id = ' + r_id + ', descript = \'' + k_o +\
+    '\', release_date = \'' + d_r + '\' WHERE id = ' + f_id + ';' 
+    cursor = connection.cursor()
+    cursor.execute(u_req)
+    connection.commit()
+    cursor.close()
+    
+    if f_upl != "without uPdate":
+        old_f = app.config['UPLOAD_FOLDER'] + '/' + f_upl
+        new_f = app.config['UPLOAD_FOLDER'] + '/perech' + f_id + ".png"
+        print(old_f,"--------=---------", new_f)
+        os.replace(old_f, new_f)
+    return redirect(url_for('perechen', ff_n=f_n, page=1))
+
+
+@app.route("/editing", methods=["GET", "POST"])
 @login_required
 def editing():
+    if request.method == "GET":
+        f_id = str(request.args.get("film_id", ""))
 
-    return render_template('editing.html', c_u=current_user)
+        c_req = '''SELECT id, film_name, janre_id,
+    release_date, rejiser_id, descript, rate, user_id, poster FROM
+    films WHERE id=\'''' + str(f_id) + "';"
+        cursor = connection.cursor()
+        janre_list = get_janre_list(cursor)
+        regis_list = get_regis_list(cursor)
+        cursor.execute(c_req)
+        row = cursor.fetchall()
+        cursor.close()
+        opis = Prch(row[0][0], row[0][1], row[0][2], row[0][3], row[0][4],
+        row[0][5], row[0][6], row[0][7], row[0][8])
+        return render_template('editing.html', c_u=current_user, f_id=f_id,
+        janre_list=janre_list, regis_list=regis_list, opis=opis)
+    
+    
+    elif request.method == "POST":
+        f_n = request.form["f_name"]
+        f_id = request.form["film_id"]
+        j_id = request.form["janr"]
+        r_id = request.form["regis"]
+        k_o = request.form["f_desc"]
+        d_r = request.form["rel_date"]
 
+        file = request.files['fileToUpload']
+#        u_file = file.filename
+        if file and file.filename != '':        
+            filename = secure_filename(file.filename)
+            new_filename = generate_random_filename() + '.' + \
+            filename.rsplit('.', 1)[1].lower()
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
+            print(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
+        else:
+            new_filename = "without uPdate"
+
+        return redirect(url_for('editingsql', f_n=f_n, f_id=f_id,
+        j_id=j_id, r_id=r_id, k_o=k_o, d_r=d_r, f_u=new_filename))
+       
 
 @app.route("/login", methods=["GET", 'POST'])
 def login():
