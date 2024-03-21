@@ -266,7 +266,7 @@ def adding():
         janre_list = get_janre_list(cursor)
         regis_list = get_regis_list(cursor)
         cursor.close()
-        return render_template('adding.html',
+        return render_template('adding.html', c_u=current_user,
         janre_list=janre_list, regis_list=regis_list)
        
 
@@ -364,6 +364,41 @@ def editing():
         return redirect(url_for('editingsql', f_n=f_n, f_id=f_id,
         j_id=j_id, r_id=r_id, k_o=k_o, d_r=d_r, f_u=new_filename))
        
+
+@app.route("/deleted")
+@login_required
+def deleted():
+    result = str(request.args.get("result", ""))
+    return render_template('deleted.html', result=result, c_u=current_user)
+
+
+@app.route("/delet_ing", methods=["GET", "POST"])
+@login_required
+def delet_ing():
+    if request.method == "GET":
+       f_id = str(request.args.get("film_id", ""))
+       f_name = str(request.args.get("film_name", ""))
+       return render_template('deleting.html', c_u=current_user,
+        f_id=f_id, f_n=f_name)
+
+    elif request.method == "POST":
+       f_id = str(request.form["film_id"])
+       f_name = str(request.form["film_name"])
+       f_control = str(request.form["f_control"])
+       if f_control == 'Do it now!':
+           d_req = "DELETE FROM films WHERE id = " + f_id + ';'
+           try:
+               cursor = connection.cursor()
+               cursor.execute(d_req)
+               connection.commit()
+               cursor.close()
+               result = f_name + '   = удалено '
+           except:
+               result = f_name + ' !!! не удалось удалить!!! Ошибка БД'
+       else:
+           result = f_name + '   = не был уделен'
+       return redirect(url_for('deleted', result=result))
+
 
 @app.route("/login", methods=["GET", 'POST'])
 def login():

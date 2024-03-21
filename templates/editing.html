@@ -1,18 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 {{ super() }}
-<p> Редактирование существующего описания фильма <br>
-    ---| {{ opis.film_name }} |--- {{ opis.id }}<br>
+ Редактирование существующего описания фильма <br>
     Администратор редактирует любую запись. <br>
-    
     Пользователь редактирует только те, что сам создал <br>
-    Гости могут только просматривать <br>
-    
-    <form method="POST" action="/editing" id="addForm" enctype="multipart/form-data">
+    Гости могут только просматривать
+    <form method="POST" action="/editing" id="addForm" enctype="multipart/form-data" class="dskr-item">
         <table>
         <tr>
          <td><label for="f_name">Название фильма</label></td>
-         <td><input type="text" id="f_name" name="f_name" value="{{ opis.film_name }}"><br></td>
+         <td><input type="text" id="f_name" name="f_name" value="{{ opis.film_name }}"></td>
        </tr>
     
        <tr>
@@ -24,8 +21,8 @@
          <td><img class="user-poster" src="{{ opis.poster }}" 
             alt="Здесь нет изображения!!!" width="200" height="150" />
           <br></td>
-         <td><input type="file" name="fileToUpload" id="fileToUpload"></td>
-        </tr><br><br><br>
+         <td><input type="file" name="fileToUpload" id="fileToUpload"><br> предпочтительно 200х150 px</td>
+        </tr>
 
         <tr>
             
@@ -53,6 +50,7 @@
         <td><button type="submit" onclick="validate()">Сохранить изменения</td>
         </table>
         <input type="hidden" name="film_id" id="film_id" value="{{ opis.id }}">
+    </form>
         <script>
           document.getElementById('addForm').addEventListener('submit', function(event) {
             var fName = document.getElementById('f_name').value;
@@ -119,17 +117,10 @@
             }
 
             });
-
-
-
-        
-        
-         
-        
-        
         
          </script>
-
-
+<br>=============================================================
+<br>
+<a href="/delet_ing?film_id={{ opis.id }}&film_name={{ opis.film_name }}">Удалить это описание</a>
 
 {% endblock %}

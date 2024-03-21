@@ -66,9 +66,13 @@ body {
     line-height: 171%;
     color: #d87b24;
     margin-left: 0;
+    margin-bottom: 0;
+    margin-top: 0;
+    padding: 0;
 }
 
 .maincontn {
+    margin-top: 0;
     padding-left: 4px;
     padding-top: 4px;
     padding-right: 4px;
@@ -101,6 +105,8 @@ body {
     max-height: 150px;
     min-width: 200px;
     min-height: 150px;
+    object-position: center;
+    object-fit: contain;
 }
 
 .dskr-item {
@@ -123,4 +129,16 @@ body {
     font-size: 22px;
     color: #031a03;
     margin-left: 0;
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.blinking-text {
+    color: red;
+    font-size: 40px;
+    animation: blink 1s linear infinite;
 }

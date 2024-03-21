@@ -3,23 +3,23 @@
 {{ super() }}
 <p> <span class="dskr-item">Добавьте описания фильма.  Будьте добры избегать нецензурной лексики. Также просим <br>
      избегать пропаганды межрасовой вражды...а также любой неприязни по любому признаку. </span><br>
-     </p><br>
+     </p>
      <form method="POST" action="/adding" id="addForm" enctype="multipart/form-data">
         <table>
         <tr>
          <td><label for="f_name">Название фильма</label></td>
-         <td><input type="text" id="f_name" name="f_name"><br></td>
+         <td><input type="text" id="f_name" name="f_name"></td>
        </tr>
     
        <tr>
         <td><label for="f_desc">Краткое описание</label>
         <td><textarea maxlength="500" cols="30" rows="5" wrap="soft" id="f_desc" name="f_desc"  placeholder="Пишите здесь (не более 500 символов)"></textarea></td>
-        </tr><br>
+        </tr>
     
         <tr>
-         <td><label for "fileToUpload">выберите изображение</label></td>
+         <td><label for "fileToUpload">выберите изображение<br> предпочтительно 200х150 px</label></td>
          <td><input type="file" name="fileToUpload" id="fileToUpload"></td>
-        </tr><br><br><br>
+        </tr>
 
         <tr>
             
