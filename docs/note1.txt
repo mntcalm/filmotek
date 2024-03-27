@@ -1,0 +1,10 @@
+openapi: 3.0.0
+info: 
+  title: filmoteka site docs
+  version: 0.0.1
+servers:
+  - url: http://localhost:8080/apidocs
+    description: docs for API
+paths:
+  /login:
+    get:

@@ -21,3 +21,10 @@ ALTER USER film_user WITH ENCRYPTED PASSWORD 'fiLm1234';
 2,user2,pass2word,2,0
 3,user3,pass3word,2,1
 4,user4,pass4woRd,2,0
+
+swagger:
+https://babok-school.ru/blog/open-api-specification-example/
+https://blog.ithillel.ua/ru/articles/api-testing-with-swagger
+https://www.youtube.com/watch?v=rIsEbsvuOlM&t=78s
+https://www.youtube.com/watch?v=OoM5WSfswbw
+https://www.youtube.com/watch?v=z3lat1gzaKk&list=PL4MpKy3QjNp8IsepABrb_c6D867DFO6aR

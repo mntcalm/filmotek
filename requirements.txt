@@ -13,3 +13,4 @@ Werkzeug==0.16.0
 Dnspython==2.5.0
 psycopg2-binary==2.9.9
 Image==1.5.33
+Flasgger==0.9.7

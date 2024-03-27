@@ -9,6 +9,12 @@ class Db_details(object):
         self.login = login
         self.password = password
 
+class Log_details(object):
+    def __init__(self, level, size, number):
+        self.level = level
+        self.size = size
+        self.number = number
+
 class UserLogin():
     def __init__(self, id, name, role_id, locked):
         self.id = id

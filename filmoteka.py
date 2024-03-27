@@ -15,13 +15,15 @@ import os
 import random
 import string
 from models import (Db_details,
+   Log_details,
    UserLogin,
    Prch,
    Janry,
    Regisery)
 #import models
 #from UserLogin import UserLogin
-
+import logging
+from flasgger import Swagger
 
 
 
@@ -39,7 +41,10 @@ def parse_config():
         db_port = config.get("db", "port")
         db_l = config.get("db", "login")
         db_p = config.get("db", "password")
-        return Db_details(db_driver, db_name, db_host, db_port, db_l, db_p)
+        log_l = config.get("log", "level")
+        log_s = config.get("log", "size")
+        log_n = config.get("log", "number")
+        return Db_details(db_driver, db_name, db_host, db_port, db_l, db_p), Log_details(log_l, log_s, log_n)
     except:
         return "Failed to read DB config"
 
@@ -72,13 +77,14 @@ def get_regis_list(cursr):
         r_l.append(a)
     return r_l
 
-db_details = parse_config()
+db_details, log_details = parse_config()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '9OLWxhH345j4K4iuopO'
 app.config['UPLOAD_FOLDER'] = 'static/img/posters'
 app.config['MAX_CONTENT_LENGTH'] = 1.5 * 1024 * 1024  # 1.5 MB limit
 ALLOWED_EXTENSIONS = {'png', 'gif', 'bmp', 'jpg', 'jpeg'}
+swagger = Swagger(app, template_file='docs/index.yml')
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -88,6 +94,10 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+logging.basicConfig(level=getattr(logging, log_details.level),
+filename="log/filmer.log",
+format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+filemode="a")
 
 if str(db_details.driver) == 'postgresql':
     connection = ps.connect(
@@ -102,6 +112,9 @@ if str(db_details.driver) == 'postgresql':
 
 @app.route("/")
 def index():
+    """
+    file: docs/index.yml
+    """
     mssg = str(request.args.get("f_msg", "Привет-привет!"))
     return render_template('index.html', mssg=mssg, c_u=current_user)
 
@@ -242,8 +255,7 @@ def addingsql():
     cursor.execute(ins_req)
     db_rep = cursor.fetchall()
     post_id = db_rep[0][0]
-    print(post_id)
-    
+        
     
     old_f = app.config['UPLOAD_FOLDER'] + '/' + f_upl
     new_f = app.config['UPLOAD_FOLDER'] + '/perech' +\
@@ -254,7 +266,7 @@ def addingsql():
     cursor.execute(upd_req)
     connection.commit()
     cursor.close()
-    
+    logging.info(f"unit with ID={post_id} sucsessfuly added by {current_user.name}")
     os.rename(old_f, new_f)
     return redirect(url_for('perechen', ff_n=f_name, page=1))
 
@@ -309,14 +321,20 @@ def editingsql():
     j_id + ', rejiser_id = ' + r_id + ', descript = \'' + k_o +\
     '\', release_date = \'' + d_r + '\' WHERE id = ' + f_id + ';' 
     cursor = connection.cursor()
-    cursor.execute(u_req)
-    connection.commit()
+    
+    try:
+        cursor.execute(u_req)
+        connection.commit()
+        logging.info(f"unit with ID={f_id} sucsessfuly edited by {current_user.name}")
+    except:
+        logging.error("unit with ID=", f_id, ": editing FAILED by ", current_user.name)
     cursor.close()
     
+    
+
     if f_upl != "without uPdate":
         old_f = app.config['UPLOAD_FOLDER'] + '/' + f_upl
         new_f = app.config['UPLOAD_FOLDER'] + '/perech' + f_id + ".png"
-        print(old_f,"--------=---------", new_f)
         os.replace(old_f, new_f)
     return redirect(url_for('perechen', ff_n=f_n, page=1))
 
@@ -393,10 +411,16 @@ def delet_ing():
                connection.commit()
                cursor.close()
                result = f_name + '   = удалено '
+               logging.info(f"unit with ID={f_id} sucsessfuly deleted \
+                by {current_user.name}")
            except:
                result = f_name + ' !!! не удалось удалить!!! Ошибка БД'
+               logging.info(f"unit with ID={f_id}: FAILED deleting \
+                by {current_user.name}")
        else:
            result = f_name + '   = не был уделен'
+           logging.info(f"unit with ID={post_id}: IS NOT deleted \
+                by {current_user.name} - wrong code entered")
        return redirect(url_for('deleted', result=result))
 
 
@@ -438,19 +462,22 @@ def login():
               msg = "Вы успешно авторизованы как " + str(d_login)
               userlogin = UserLogin(d_id, d_login, d_role, d_locked)
               login_user(userlogin)
-              
+              logging.info(f"LOGIN - OK: {current_user.name} logged in")
 
 
           else:
-              msg = "Неправильный пароль"     
+              msg = "Неправильный пароль"  
+              logging.info(f"LOGIN - FAILED: {current_user.name} -\
+                 wrong password")   
       else:
           msg = "Нет такого пользователя"
-      
+          logging.info(f"LOGIN - FAILED: wrong username")
       
       return redirect(url_for('index', f_msg=msg))
 
 @app.route('/logout')
 def logout():
+    logging.info(f"LOGOUT - OK: {current_user.name} logged out")
     logout_user()
     return redirect(url_for('index'))
 
@@ -465,6 +492,9 @@ def help_it():
 
     return render_template('help.html', c_u=current_user)
 
+#@app.route("/apidocs")
+#def apidocs():
+#    return flasgger.render_template('index.html', base_url="/")
 
 @login_manager.user_loader
 def load_user(userid):
@@ -490,7 +520,8 @@ def load_user(userid):
         
     if  len(u_d) == 1: # пользователь существует
         loaded_user = UserLogin(d_id, d_login, d_role, d_locked)
-            
+#        logging.info(f"User details loaded: {current_user.name}")  
     return loaded_user
+
 
 app.run(host='127.0.0.1', port=8080, debug=True)
