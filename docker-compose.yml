@@ -1,0 +1,12 @@
+version: '3.3'
+services:
+  filmer:
+    image: filmer:1.0
+    container_name: filmer
+    ports:
+      - "127.0.0.1:8082:8082"
+
+    volumes:
+      - /home/calltop/for_filmotek/filmotek:/app
+
+    restart: unless-stopped
