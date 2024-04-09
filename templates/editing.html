@@ -93,7 +93,7 @@
             //else {
             //  alert('Пожалуйста, выберите файл для загрузки.');
             //  event.preventDefault(); // Останавливаем отправку формы
-              }
+            //  }
              
             if (inputDate) {  
                if (Rdate < minDate || Rdate > today) {
@@ -115,12 +115,13 @@
               alert('Выбирайте жанр!!');
               event.preventDefault();
             }
-
-            });
+            document.getElementById("f_desc").value=fDesc.replace(/"/g, "``").replace(/'/g, "`");
+            document.getElementById("f_name").value=fName.replace(/"/g, "``").replace(/'/g, "`");
+          });
         
          </script>
 <br>=============================================================
 <br>
-<a href="/delet_ing?film_id={{ opis.id }}&film_name={{ opis.film_name }}">Удалить это описание</a>
+<a href="/deleting?film_id={{ opis.id }}&film_name={{ opis.film_name }}">Удалить это описание</a>
 
 {% endblock %}
