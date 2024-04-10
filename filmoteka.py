@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import configparser
+import traceback
 import os.path
 import base64
 from PIL import Image
@@ -94,7 +96,11 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+if not os.path.exists('log'):
+    os.makedirs('log')
+
 logging.basicConfig(level=getattr(logging, log_details.level),
+
 filename="log/filmer.log",
 format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 filemode="a")
@@ -112,9 +118,7 @@ if str(db_details.driver) == 'postgresql':
 
 @app.route("/")
 def index():
-    """
-    file: docs/index.yml
-    """
+    
     mssg = str(request.args.get("f_msg", "Привет-привет!"))
     return render_template('index.html', mssg=mssg, c_u=current_user)
 
@@ -137,7 +141,9 @@ def perechen():
     if f_filtr_name == 'None' or len(f_filtr_name) <=2:
         db_f_filtr_name = ''
     else:
-        db_f_filtr_name = " AND f.film_name ILIKE '%" + f_filtr_name + "%\'"
+        db_f_filtr_name = " AND f.film_name ILIKE  %s"
+        filtr_value = "%" + f_filtr_name + "%"
+#        db_f_filtr_name = " AND f.film_name ILIKE '%" + f_filtr_name + "%\'"
     
     if j_filtr_id == 'None' or str(j_filtr_id) == '-8':
         db_j_filtr_id = ''
@@ -190,16 +196,22 @@ def perechen():
  
     janre_list = get_janre_list(cursor)
     regis_list = get_regis_list(cursor)
-
+    
 # запрашиваем, пересчитываем
-    cursor.execute(r_n)
+    if db_f_filtr_name == '':
+        cursor.execute(r_n)
+    else:
+        cursor.execute(r_n, (filtr_value,))
+    
     entryes = cursor.fetchall()
     n_pages = ceil(entryes[0][0] / paginacia)
     n_entr = entryes[0][0]
 
 # запрашиваем, запоминаем
-    cursor.execute(request_to_read_data)
-
+    if db_f_filtr_name == '':
+        cursor.execute(request_to_read_data)
+    else:
+        cursor.execute(request_to_read_data, (filtr_value,))
     data = cursor.fetchall()
 #    #print(len(data))
     cursor.close()
@@ -234,42 +246,6 @@ def perechen():
     gg_do=g_do, ww_sort=w_sort, nn_pagin=n_pagin, pp_page=1))
 
 
-@app.route("/addingsql", methods=["GET"])
-@login_required
-def addingsql():
-    f_name = str(request.args.get("f_n"))
-    f_desc = str(request.args.get("f_d"))
-    rel_dat = str(request.args.get("r_d"))
-    f_upl = str(request.args.get("f_u"))
-    f_jnr = str(request.args.get("f_j"))
-    f_rej = str(request.args.get("f_r"))
-    c_uid = str(current_user.id)
-
-    cursor = connection.cursor()
-    ins_req = '''INSERT INTO films (film_name, janre_id, rejiser_id,
-    release_date, descript, rate, user_id) VALUES (''' + "'" + f_name +\
-    "', " + f_jnr + ", " + f_rej + ", '" +  rel_dat + "', '" +\
-    f_desc + "', 5.5, " + c_uid + ") RETURNING id;"
-    connection.commit()
-    
-    cursor.execute(ins_req)
-    db_rep = cursor.fetchall()
-    post_id = db_rep[0][0]
-        
-    
-    old_f = app.config['UPLOAD_FOLDER'] + '/' + f_upl
-    new_f = app.config['UPLOAD_FOLDER'] + '/perech' +\
-    str(post_id) + ".png"
-    upd_req = "UPDATE films SET poster = '" +\
-    new_f + "' WHERE id = '" + str(post_id) + "';"
-    print(upd_req)
-    cursor.execute(upd_req)
-    connection.commit()
-    cursor.close()
-    logging.info(f"unit with ID={post_id} sucsessfuly added by {current_user.name}")
-    os.rename(old_f, new_f)
-    return redirect(url_for('perechen', ff_n=f_name, page=1))
-
 @app.route("/adding", methods=["GET", "POST"])
 @login_required
 def adding():
@@ -280,9 +256,7 @@ def adding():
         cursor.close()
         return render_template('adding.html', c_u=current_user,
         janre_list=janre_list, regis_list=regis_list)
-       
-
-
+    
     elif request.method == "POST":
         f_n = request.form["f_name"]
         f_d = request.form["f_desc"]
@@ -290,7 +264,8 @@ def adding():
 #        u_file = request.form["fileToUpload"]
         f_j = request.form["janr"]
         f_r = request.form["regis"]
-        
+        c_uid = str(current_user.id)
+
         file = request.files['fileToUpload']
 #        u_file = file.filename
         filename = secure_filename(file.filename)
@@ -298,45 +273,42 @@ def adding():
             filename.rsplit('.', 1)[1].lower()
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename)) 
         
+#        cursor = connection.cursor()
+#        ins_req = '''INSERT INTO films (film_name, janre_id, rejiser_id,
+#        release_date, descript, rate, user_id) VALUES (''' + "'" + f_n +\
+#        "', " + f_j + ", " + f_r + ", '" +  r_d + "', '" +\
+#        f_d + "', 5.5, " + c_uid + ") RETURNING id;"
+#        connection.commit()
+
+        cursor = connection.cursor()
+        ins_req = """
+            INSERT INTO films (film_name, janre_id, rejiser_id, release_date, 
+            descript, rate, user_id)
+            VALUES (%s, %s, %s, %s, %s, 5.5, %s) RETURNING id;
+            """
+        print(ins_req)
+                
+    
+        cursor.execute(ins_req, (f_n, f_j, f_r, r_d, f_d, c_uid))
         
-        return redirect(url_for('addingsql', f_n=f_n, f_d=f_d, r_d=r_d,
-        f_u=new_filename,
-        f_j=f_j, f_r=f_r))
-
-
-@app.route("/editingsql", methods=["GET", "POST"])
-@login_required
-def editingsql():
-    
-    f_id = str(request.args.get("f_id"))
-    f_n = str(request.args.get("f_n"))
-    j_id= str(request.args.get("j_id"))
-    r_id = str(request.args.get("r_id"))
-    k_o = str(request.args.get("k_o"))
-    d_r = str(request.args.get("d_r"))
-    f_upl = str(request.args.get("f_u"))
-
-    print("применение изменений ", f_id)
-    u_req = 'UPDATE films SET film_name = \'' + f_n + '\', janre_id = ' +\
-    j_id + ', rejiser_id = ' + r_id + ', descript = \'' + k_o +\
-    '\', release_date = \'' + d_r + '\' WHERE id = ' + f_id + ';' 
-    cursor = connection.cursor()
-    
-    try:
-        cursor.execute(u_req)
+        db_rep = cursor.fetchall()
+        post_id = db_rep[0][0]
         connection.commit()
-        logging.info(f"unit with ID={f_id} sucsessfuly edited by {current_user.name}")
-    except:
-        logging.error("unit with ID=", f_id, ": editing FAILED by ", current_user.name)
-    cursor.close()
     
-    
+        old_f = app.config['UPLOAD_FOLDER'] + '/' + new_filename
+        new_f = app.config['UPLOAD_FOLDER'] + '/perech' +\
+        str(post_id) + ".png"
+        upd_req = "UPDATE films SET poster = '" +\
+        new_f + "' WHERE id = '" + str(post_id) + "';"
+        
+        cursor.execute(upd_req)
+        connection.commit()
+        cursor.close()
+        logging.info(f"unit with ID={post_id} sucsessfuly added by {current_user.name}")
+        os.rename(old_f, new_f)
 
-    if f_upl != "without uPdate":
-        old_f = app.config['UPLOAD_FOLDER'] + '/' + f_upl
-        new_f = app.config['UPLOAD_FOLDER'] + '/perech' + f_id + ".png"
-        os.replace(old_f, new_f)
-    return redirect(url_for('perechen', ff_n=f_n, page=1))
+
+        return redirect(url_for('perechen', ff_n=f_n, page=1))
 
 
 @app.route("/editing", methods=["GET", "POST"])
@@ -379,8 +351,31 @@ def editing():
         else:
             new_filename = "without uPdate"
 
-        return redirect(url_for('editingsql', f_n=f_n, f_id=f_id,
-        j_id=j_id, r_id=r_id, k_o=k_o, d_r=d_r, f_u=new_filename))
+        u_req = """
+        UPDATE films
+        SET film_name = %s, janre_id = %s, rejiser_id = %s, descript = %s, release_date = %s
+        WHERE id = %s;
+        """ 
+        cursor = connection.cursor()
+
+        if new_filename != "without uPdate":
+            old_f = app.config['UPLOAD_FOLDER'] + '/' + new_filename
+            new_f = app.config['UPLOAD_FOLDER'] + '/perech' + f_id + ".png"
+            os.replace(old_f, new_f)
+ #       return redirect(url_for('perechen', ff_n=f_n, page=1))
+
+
+        try:
+            cursor.execute(u_req, (f_n, j_id, r_id, k_o, d_r, f_id))
+            connection.commit()
+            logging.info(f"unit with ID={f_id} sucsessfuly edited by {current_user.name}")
+            result = "unit " + str(f_id) + " is edited"
+        except:
+            logging.error("unit with ID=", f_id, ": editing FAILED by ", current_user.name)
+            result = "Failed to edit unit ID=" + str(f_id) + " !!!"
+        cursor.close()
+
+        return render_template('edited.html', result=result, c_u=current_user, f_n=f_n)
        
 
 @app.route("/deleted")
@@ -390,9 +385,9 @@ def deleted():
     return render_template('deleted.html', result=result, c_u=current_user)
 
 
-@app.route("/delet_ing", methods=["GET", "POST"])
+@app.route("/deleting", methods=["GET", "POST"])
 @login_required
-def delet_ing():
+def deleting():
     if request.method == "GET":
        f_id = str(request.args.get("film_id", ""))
        f_name = str(request.args.get("film_name", ""))
@@ -426,6 +421,7 @@ def delet_ing():
 
 @app.route("/login", methods=["GET", 'POST'])
 def login():
+    
     if request.method == "GET":
        return render_template('login.html', c_u=current_user)
     elif request.method == "POST":
@@ -467,13 +463,15 @@ def login():
 
           else:
               msg = "Неправильный пароль"  
-              logging.info(f"LOGIN - FAILED: {current_user.name} -\
+              logging.info(f"LOGIN - FAILED: {str(d_login)} -\
                  wrong password")   
       else:
           msg = "Нет такого пользователя"
           logging.info(f"LOGIN - FAILED: wrong username")
       
       return redirect(url_for('index', f_msg=msg))
+  
+
 
 @app.route('/logout')
 def logout():
@@ -486,15 +484,14 @@ def user_edit():
 
     return render_template('user_edit.html', c_u=current_user)
 
-
 @app.route("/help")
 def help_it():
 
     return render_template('help.html', c_u=current_user)
 
-#@app.route("/apidocs")
-#def apidocs():
-#    return flasgger.render_template('index.html', base_url="/")
+@app.route("/apidocs")
+def apidocs():
+    return swagger.render_template('index.html', base_url="/")
 
 @login_manager.user_loader
 def load_user(userid):
@@ -516,12 +513,10 @@ def load_user(userid):
         d_locked = row[5]
         u_d.append("+")
         
-
-        
     if  len(u_d) == 1: # пользователь существует
         loaded_user = UserLogin(d_id, d_login, d_role, d_locked)
 #        logging.info(f"User details loaded: {current_user.name}")  
     return loaded_user
 
-
-app.run(host='127.0.0.1', port=8080, debug=True)
+if __name__ == "__main__":
+    app.run(host='127.0.0.1', port=8082, debug=True)

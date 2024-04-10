@@ -2,13 +2,16 @@ import requests, os, unittest
 import logging
 #import flask
 from requests.auth import HTTPBasicAuth
-
+#from filmoteka import app
+#from pathlib import Path
 
 
 login_data = {
 'login': 'user4',
 'password': 'pass4woRd'
 }
+
+session = requests.Session()
 
 # Задаем базовый URL API
 base_url = 'http://127.0.0.1:8082'
@@ -34,16 +37,7 @@ class TestResponseContainsString(unittest.TestCase):
         self.params = {
             'ff_n': self.flm_name
         }
-    
-    def login(self, login, password):
-        return requests.post('/login', data=dict(
-           login=login,
-           password=password
-           ))
 
-    def logout(self):
-        return requests.get('/logout', follow_redirects=True)
-            
 
     def test_01_string_not_present(self):
 # Проверяем, что строки нет
@@ -59,14 +53,37 @@ class TestResponseContainsString(unittest.TestCase):
 #            self.fail("Тест не прошел, останавливаем выполнение")
     
     def test_02_login_auth(self):
-        response = requests.post(f'{self.base_url}/login', data=login_data)
-        try: 
-            self.assertIn('Вы успешно авторизованы как', response.text, 
-            "Строка должна быть")
-            logging.info('Авторизация успешна - Ok')
-        except:
-            logging.error('Авторизация провалена ')
+        response = session.post(f'{self.base_url}/login', data=login_data)
+#        print(response.text)
+        if response.ok:
+            logging.info('Маршрут для авторизации сработал - Ok')
+            try:
+                self.assertIn('Вы успешно авторизованы', response.text, 
+                "Авторизация состоялась")
+                logging.info('Авторизация успешна - Ok')
+            except:
+                logging.error('Авторизация провалена - аварийный выход')
+                self.fail("Тест не прошел, останавливаем выполнение")
+        else:
+            logging.error('Маршрут авторизации не сработал - аварийный выход')
+            self.fail("Тест не прошел, останавливаем выполнение")
 
+    
+    def test_03_adding(self):
+        with open('test.png', 'rb') as file:
+            add_data = {
+            'f_name': self.flm_name,
+            'f_desc': 'Описание тестового элемента',
+            'rel_date': '1871-01-02',
+            'janr': '1',
+            'regis': '1'
+            }
+            files = {
+            'fileToUpload': ('test.png', file, 'image/png')
+            }
+            response = session.post(f'{self.base_url}/adding', data=add_data, 
+            files=files)
+        print(response.text)
 
     
     def te_st_04_response_contains_string(self):

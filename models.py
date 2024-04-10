@@ -70,4 +70,3 @@ class Regisery(object):
             self.id = id
             self.r_name = r_name
 
-
