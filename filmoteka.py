@@ -286,7 +286,7 @@ def adding():
             descript, rate, user_id)
             VALUES (%s, %s, %s, %s, %s, 5.5, %s) RETURNING id;
             """
-        print(ins_req)
+#        print(ins_req)
                 
     
         cursor.execute(ins_req, (f_n, f_j, f_r, r_d, f_d, c_uid))
@@ -347,7 +347,7 @@ def editing():
             new_filename = generate_random_filename() + '.' + \
             filename.rsplit('.', 1)[1].lower()
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
-            print(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
+#            print(os.path.join(app.config['UPLOAD_FOLDER'], new_filename))
         else:
             new_filename = "without uPdate"
 
