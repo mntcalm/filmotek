@@ -1,43 +1,276 @@
-openapi: 3.0.0
-servers:
-  # я не уверен что это за сервер
-  - description: Посмотрим, что будет
-    url: https://google.com
+swagger: '2.0'
 info:
   description: 'Пытаемся подружиться со сваггером'
   version: "1.0.0"
   title: 'API каталога фильмов'
-tags:
-  - name: login
-    description: 'page for login '
-  - name: logout
-    description: 'logout'
-  - name: perechen
-    description: 'perechen'
-  - name: create
-    description: 'create'
-  - name: update
-    description: 'update'
-  - name: delete
-    description: 'delete'
-
+host: localhost:8082
+basePath: /docs
+schemes:
+  - http
+securityDefinitions:
+  basicAuth:
+    type: basic
 
 paths:
+  /perechen:
+    get:
+      summary: Получение списка фильмов
+      parameters:
+        - name: ff_n
+          description: Название фильма, строка
+          in: query
+          required: false
+          allowEmptyValue: true
+          type: string
+        - name: jj_id
+          in: query
+          description: 'Параметр jj_id (id жанра)'
+          type: integer
+          required: false
+          allowEmptyValue: true
+        - name: rr_id
+          in: query
+          type: integer
+          required: false
+          allowEmptyValue: true
+          description: Параметр rr_id (id режиссера)
+        - name: gg_ot
+          type: integer
+          description: Дата начала (необязательный)
+          type: date
+        - in: query
+          name: gg_do
+          description: Дата окончания (необязательный)
+          type: string
+        - in: query
+          name: ww_sort
+          type: string
+          default: 'nosort'
+          description: Тип сортировки
+        - in: query
+          name: nn_pagin
+          type: integer
+          default: 10
+          description: Количество фильмов на странице
+        - in: query
+          name: pp_page
+          type: integer
+          default: 1
+          description: Номер страницы
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  movies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          description: 'some string'
   /:
     get:
+      summary: Приветствие
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json: 
+              schema:
+                type: object
+  
+  /adding:
+    get:
+      security:
+        - basicAuth: []      
       tags:
-        - perechen
-
-      summary: Главная страница
-      description: Возвращает главную страницу с приветственным сообщением.
+       - adding
+      summary: Получение данных для добавления фильма
+      responses:
+      '200':
+        description: Возвращает HTML-страницу для добавления фильма
+    post:
+      security:
+        - basicAuth: []
+      tags:
+       - adding    
+      summary: Добавление нового фильма
       parameters:
-        name: f_msg
-        in: query
-        required: false
-        description: Приветственное сообщение для пользователя.
-        schema:
+        - in: formData
+          name: f_name
           type: string
-          default: "Привет-привет!"
-          responses:
-            200:
-              description: HTML страница главной страницы.
+          required: true
+          description: Название фильма
+        - in: formData
+          name: f_desc
+          type: string
+          required: true
+          description: Описание фильма
+        - in: formData
+          name: rel_date
+          type: string
+          required: true
+          description: Дата выпуска фильма
+        - in: formData
+          name: janr
+          type: integer
+          required: true
+          description: Жанр фильма
+        - in: formData
+          name: regis
+          type: integer
+          required: true
+          description: Режиссер фильма
+        - in: formData
+          name: fileToUpload
+          type: file
+          required: true
+          description: Постер фильма
+      responses:
+      '302':
+        description: Перенаправление на страницу с перечнем фильмов после добавления
+
+  /editing:
+    get:
+      tags:
+       - editing
+      security:
+        - basicAuth: []
+    summary: Получение данных для редактирования фильма
+    parameters:
+      - name: film_id
+        in: query
+        description: Идентификатор фильма для редактирования
+        required: true
+        type: string
+    responses:
+      '200':
+        description: Страница редактирования фильма
+        schema:
+          type: object
+          properties:
+            film_name:
+              type: string
+            janre_id:
+              type: integer
+            release_date:
+              type: string
+            rejiser_id:
+              type: integer
+            descript:
+              type: string
+            rate:
+              type: integer
+            user_id:
+              type: integer
+            poster:
+              type: string
+    post:
+      tags:
+        - editing
+      security:
+        - basicAuth: []        
+      summary: Применение изменений к фильму
+      consumes:
+        - multipart/form-data
+      parameters:
+        - name: f_name
+          in: formData
+          description: Название фильма
+          required: true
+          type: string
+        - name: film_id
+          in: formData
+          description: Идентификатор фильма
+          required: true
+          type: string
+        - name: janr
+          in: formData
+          description: Жанр фильма
+          required: true
+          type: string
+        - name: regis
+          in: formData
+          description: Режиссер фильма
+          required: true
+          type: string
+        - name: f_desc
+          in: formData
+          description: Описание фильма
+          required: true
+          type: string
+        - name: rel_date
+          in: formData
+          description: Дата выпуска фильма
+          required: true
+          type: string
+        - name: fileToUpload
+          in: formData
+          description: Постер фильма
+          required: true
+          type: file
+    responses:
+      '200':
+        description: Результат редактирования фильма
+        schema:
+          type: object
+        properties:
+          result:
+            type: string
+  /deleting:
+    get:
+      tags:
+        - deleting
+      summary: Получение данных для удаления фильма
+      security:
+        - basicAuth: []
+      parameters:
+        - name: film_id
+          in: query
+          type: string
+          description: Идентификатор фильма для удаления
+          required: true
+        - name: film_name
+          in: query
+          type: string
+          description: Название фильма для удаления
+          required: true
+      responses:
+        '200':
+          description: Страница подтверждения удаления фильма
+    post:
+      tags:
+        - deleting
+      summary: Удаление фильма из каталога
+      security:
+        - basicAuth: []
+      parameters:
+        - name: film_id
+          in: formData
+          type: string
+          description: Идентификатор фильма для удаления
+          required: true
+        - name: film_name
+          in: formData
+          type: string
+          description: Название фильма для удаления
+          required: true
+        - name: f_control
+          in: formData
+          type: string
+          description: Контрольная строка для подтверждения удаления
+          required: true
+      responses:
+        '302':
+          description: Перенаправление на страницу с результатом удаления
+          headers:
+            Location:
+              type: string
+              description: URL страницы с результатом удаления
+              
+

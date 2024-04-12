@@ -1,0 +1,43 @@
+openapi: 3.0.0
+servers:
+  # я не уверен что это за сервер
+  - description: Посмотрим, что будет
+    url: https://google.com
+info:
+  description: 'Пытаемся подружиться со сваггером'
+  version: "1.0.0"
+  title: 'API каталога фильмов'
+tags:
+  - name: login
+    description: 'page for login '
+  - name: logout
+    description: 'logout'
+  - name: perechen
+    description: 'perechen'
+  - name: create
+    description: 'create'
+  - name: update
+    description: 'update'
+  - name: delete
+    description: 'delete'
+
+
+paths:
+  /:
+    get:
+      tags:
+        - perechen
+
+      summary: Главная страница
+      description: Возвращает главную страницу с приветственным сообщением.
+      parameters:
+        name: f_msg
+        in: query
+        required: false
+        description: Приветственное сообщение для пользователя.
+        schema:
+          type: string
+          default: "Привет-привет!"
+          responses:
+            200:
+              description: HTML страница главной страницы.
