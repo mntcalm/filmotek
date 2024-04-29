@@ -15,6 +15,7 @@ import string
 from models import (
     Db_details,
     Log_details,
+    Sec_details,
     UserLogin,
     Prch,
     Janry,
@@ -24,25 +25,31 @@ from flasgger import Swagger
 
 
 def parse_config():
-    # Создаем объект ConfigParser, файл filmotek.conf рядом
+# creating object ConfigParser. File filmotek.conf should to be near
+# Создаем объект ConfigParser, файл filmotek.conf рядом
     config = configparser.ConfigParser()
     if os.path.exists('filmotek.conf'):
         program_dir = os.path.dirname(os.path.abspath(__file__))
         config_path = os.path.join(program_dir, "filmotek.conf")
         config.read(config_path)
-#    # Получаем значения параметров font из секции db
+#    getting db details
         db_driver = config.get("db", "driver")
         db_name = config.get("db", "name")
         db_host = config.get("db", "host")
         db_port = config.get("db", "port")
         db_l = config.get("db", "login")
         db_p = config.get("db", "password")
+# getting details for logging
         log_l = config.get("log", "level")
         log_s = config.get("log", "size")
         log_n = config.get("log", "number")
+# getting security details
+        secr_key = config.get("security", "secr_key")
+        allowed_extensions = config.get("security", "allowed_extensions")
         return \
             Db_details(db_driver, db_name, db_host, db_port, db_l, db_p), \
-            Log_details(log_l, log_s, log_n)
+            Log_details(log_l, log_s, log_n), \
+            Sec_details(secr_key, allowed_extensions)
 
 
 def generate_random_filename():
@@ -77,13 +84,13 @@ def get_regis_list(cursr):
     return r_l
 
 
-db_details, log_details = parse_config()
+db_details, log_details,  sec_details = parse_config()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '9OLWxhH345j4K4iuopO'
+app.config['SECRET_KEY'] = sec_details.secr_key
 app.config['UPLOAD_FOLDER'] = 'static/img/posters'
 app.config['MAX_CONTENT_LENGTH'] = 1.5 * 1024 * 1024  # 1.5 MB limit
-ALLOWED_EXTENSIONS = {'png', 'gif', 'bmp', 'jpg', 'jpeg'}
+ALLOWED_EXTENSIONS = set(sec_details.allowed_extensions.split(', '))
 swagger = Swagger(app, template_file='docs/index.yml')
 
 

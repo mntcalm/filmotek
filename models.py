@@ -1,6 +1,6 @@
 # models.py
 
-class Db_details(object):
+class Db_details():
     def __init__(self, driver, name, host, port, login, password):
         self.driver = driver
         self.name = name
@@ -9,11 +9,18 @@ class Db_details(object):
         self.login = login
         self.password = password
 
-class Log_details(object):
+class Log_details():
     def __init__(self, level, size, number):
         self.level = level
         self.size = size
         self.number = number
+
+class Sec_details():
+    def __init__(self, secr_key, allowed_extensions):
+        self.secr_key = secr_key
+        self.allowed_extensions = allowed_extensions
+
+
 
 class UserLogin():
     def __init__(self, id, name, role_id, locked):
